@@ -179,7 +179,7 @@ training4 &lt;- training3[ inTrain,]
 testing4 &lt;- training3[-inTrain,]
 allvar&lt;-data.frame(&quot;varList&quot;=names(training4)) #All variables in model
 dim.training4&lt;-dim(training4)</code></pre>
-<p>There are 1.471710^{4}, 45 independent variables and 1 target variable left to build the model.</p>
+<p>There are 45 independent variables and 1 target variable left to build the model.</p>
 <pre class="r"><code>#keep necessary variables for testing dataset of 20 observations
 vartestlist&lt;-data.frame(names(testing))
 names(vartestlist)&lt;-&quot;varList&quot;
@@ -222,13 +222,22 @@ rfh2o.accuracy&lt;-confusionMatrix(testing4$classe,rftest$predict)$overall[1]
 gbmh2o.time&lt;-system.time(gbm.model &lt;- h2o.gbm(y=y.dep,x=x.indep,training_frame = train.h2o,ntrees=1000,max_depth=4,learn_rate=0.01,seed=2016))
 predict.gbm &lt;- as.data.frame(h2o.predict(gbm.model, test.h2o))
 gbmh2o.accuracy&lt;-confusionMatrix(testing4$classe,predict.gbm$predict)$overall[1]
-h2o.varimp(gbm.model)
-
-#RandomForest package
+h2o.varimp(gbm.model)</code></pre>
+<div id="cross-validation-on-random-forest-model" class="section level4">
+<h4>Cross Validation on Random Forest model</h4>
+<p>In order to compare some models, I opted for utilizing Cross Validation on Random Forest model to</p>
+<pre class="r"><code>#RandomForest package
 library(randomForest)
-rf.time&lt;-system.time(rf.training&lt;-randomForest(classe~.,data=training4,ntree=100, importance=TRUE))
+#I used 6-fold cross validation which is light enough to run on my computer in acceptable time slot
+cvrf&lt;-trainControl(method = &quot;rf&quot;,number = 6)
+rf.time&lt;-system.time(rf.training&lt;-randomForest(classe~.,data=training4,ntree=50, trControl=cvrf, importance=TRUE))
 rf.pred&lt;-predict(rf.training,newdata=testing4,type=&quot;class&quot;)
 rf.accuracy&lt;-confusionMatrix(testing4$classe,rf.pred)$overall[1]</code></pre>
+</div>
+<div id="out-of-sample-error" class="section level4">
+<h4>Out of sample error</h4>
+<p>This step I compare Accuracy rate of all the model on predicting the testing4 dataset (which is the testing dataset randomly selected from the original training dataset in Sample step above) in the next Assess step</p>
+</div>
 </div>
 <div id="assess" class="section level3">
 <h3>Assess</h3>
@@ -246,14 +255,14 @@ rf.test20 &lt;-predict(rf.training,newdata=testing20)</code></pre>
 <p>The table below summary time need to run each model, its respective accuracy on testing dataset and system running time</p>
 <pre><code>##                      Package            V1  Accuracy System Time.user.self
 ## gbm.accuracy           caret           GBM 0.9651305              1762.770
-## gbmh2o.accuracy          h2o           GBM 0.9891925                 1.830
-## rf.accuracy     randomForest Random Forest 0.9949021                26.340
-## rfh2o.accuracy           h2o Random Forest 0.8174959                 0.618
+## gbmh2o.accuracy          h2o           GBM 0.9891925                 2.301
+## rf.accuracy     randomForest Random Forest 0.9926591                13.668
+## rfh2o.accuracy           h2o Random Forest 0.8174959                 0.556
 ##                 System Time.sys.self System Time.elapsed
 ## gbm.accuracy                  23.027            1813.868
-## gbmh2o.accuracy                0.125             163.379
-## rf.accuracy                    0.346              27.090
-## rfh2o.accuracy                 0.066              34.087
+## gbmh2o.accuracy                0.390             178.638
+## rf.accuracy                    0.164              13.979
+## rfh2o.accuracy                 0.065              29.179
 ##                 System Time.user.child System Time.sys.child
 ## gbm.accuracy                         0                     0
 ## gbmh2o.accuracy                      0                     0

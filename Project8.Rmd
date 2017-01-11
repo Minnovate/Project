@@ -2,7 +2,7 @@
 title: "Project8"
 author: "Mike"
 date: "12/26/2016"
-output: pdf_document
+output: html_document
 ---
 
 ##Executive summary
@@ -64,7 +64,7 @@ testing4 <- training3[-inTrain,]
 allvar<-data.frame("varList"=names(training4)) #All variables in model
 dim.training4<-dim(training4)
 ```
-There are `r dim.training4-1` independent variables and 1 target variable left to build the model.
+There are `r dim.training4[2]-1` independent variables and 1 target variable left to build the model.
 ```{r, results='hide',warning=FALSE, cache=TRUE}
 #keep necessary variables for testing dataset of 20 observations
 vartestlist<-data.frame(names(testing))
@@ -112,14 +112,21 @@ gbmh2o.time<-system.time(gbm.model <- h2o.gbm(y=y.dep,x=x.indep,training_frame =
 predict.gbm <- as.data.frame(h2o.predict(gbm.model, test.h2o))
 gbmh2o.accuracy<-confusionMatrix(testing4$classe,predict.gbm$predict)$overall[1]
 h2o.varimp(gbm.model)
-
+```
+####Cross Validation on Random Forest model
+In order to compare some models, I opted for utilizing Cross Validation on Random Forest model to
+```{r , results='hide', warning=FALSE, cache=TRUE}
 #RandomForest package
 library(randomForest)
-rf.time<-system.time(rf.training<-randomForest(classe~.,data=training4,ntree=100, importance=TRUE))
+#I used 6-fold cross validation which is light enough to run on my computer in acceptable time slot
+cvrf<-trainControl(method = "rf",number = 6)
+rf.time<-system.time(rf.training<-randomForest(classe~.,data=training4,ntree=50, trControl=cvrf, importance=TRUE))
 rf.pred<-predict(rf.training,newdata=testing4,type="class")
 rf.accuracy<-confusionMatrix(testing4$classe,rf.pred)$overall[1]
 
 ```
+####Out of sample error
+This step I compare Accuracy rate of all the model on predicting the testing4 dataset (which is the testing dataset randomly selected from the original training dataset in Sample step above) in the next Assess step
 
 ###Assess
 To find the best model, I opted to use the Accuracy rate on Testing dataset.
